@@ -29,9 +29,14 @@ export function passwordMode(): boolean {
   return !process.env.AUTH_GOOGLE_ID && Boolean(process.env.APP_PASSWORD);
 }
 
+/** APP_PASSWORD as typed in the dashboard, minus stray whitespace or wrapping quotes. */
+function expectedPassword(): string {
+  return (process.env.APP_PASSWORD ?? "").trim().replace(/^(["'])(.*)\1$/, "$2");
+}
+
 export function checkPassword(input: string): boolean {
-  const expected = process.env.APP_PASSWORD;
-  return Boolean(expected) && safeEqual(input, expected!);
+  const expected = expectedPassword();
+  return expected.length > 0 && safeEqual(input.trim(), expected);
 }
 
 export async function startSession(email: string): Promise<void> {

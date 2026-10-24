@@ -10,19 +10,31 @@ async function passwordSignIn(formData: FormData) {
   "use server";
   const email = String(formData.get("email") ?? "").toLowerCase();
   const password = String(formData.get("password") ?? "");
-  if (!passwordMode() || !allowedEmails().includes(email) || !checkPassword(password)) {
+  if (!passwordMode()) redirect("/login?error=not-configured");
+  if (!process.env.AUTH_SECRET) redirect("/login?error=no-secret");
+  if (!allowedEmails().includes(email)) redirect("/login?error=email");
+  if (!checkPassword(password)) {
     await new Promise((r) => setTimeout(r, 1000)); // slow down guessing
     redirect("/login?error=password");
   }
-  // The user row may not exist yet if the DB was seeded before this email was allowed.
-  const [existing] = await getDb().select().from(schema.users).where(eq(schema.users.email, email));
-  if (!existing) await getDb().insert(schema.users).values({ email, name: email.split("@")[0] });
+  try {
+    // The user row may not exist yet if the DB was seeded before this email was allowed.
+    const [existing] = await getDb().select().from(schema.users).where(eq(schema.users.email, email));
+    if (!existing) await getDb().insert(schema.users).values({ email, name: email.split("@")[0] });
+  } catch (e) {
+    console.error("login: database unavailable", e);
+    redirect("/login?error=db");
+  }
   await startSession(email);
   redirect("/");
 }
 
 const ERRORS: Record<string, string> = {
   password: "Wrong password.",
+  email: "Pick one of the founders above.",
+  "not-configured": "APP_PASSWORD isn't set on the server. Add it on Vercel, then redeploy.",
+  "no-secret": "AUTH_SECRET isn't set on the server. Add it on Vercel, then redeploy.",
+  db: "The password is right, but the database isn't reachable. Connect Neon on Vercel, then redeploy.",
   AccessDenied: "That Google account isn't on the allowlist.",
 };
 
@@ -53,6 +65,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           </form>
         ) : passwordMode() ? (
           <form action={passwordSignIn} className="flex flex-col gap-3">
+            {emails.length === 0 && (
+              <p className="text-sm text-boss">ALLOWED_EMAILS is empty on the server. Add it on Vercel, then redeploy.</p>
+            )}
             <fieldset className="flex flex-col gap-2">
               <legend className="eyebrow mb-2">Who are you</legend>
               {emails.map((e, i) => (
@@ -78,7 +93,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             </button>
           </form>
         ) : (
-          <p className="text-sm text-muted">Sign-in isn&apos;t configured. Set APP_PASSWORD on the server.</p>
+          <p className="text-sm text-muted">
+            Sign-in isn&apos;t configured: APP_PASSWORD is missing on the server. Add it on Vercel, then redeploy.
+          </p>
         )}
       </div>
     </main>
