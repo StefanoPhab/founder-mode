@@ -5,6 +5,7 @@
  *   pnpm db:seed           # rules + sample data (refuses if real events exist)
  *   pnpm db:seed --rules   # rules only; safe at any time
  *   pnpm db:seed --force   # wipe game tables and reseed, even over real events
+ *   pnpm db:seed --if-empty  # deploy mode: rules always, sample data only into an empty DB
  */
 import "dotenv/config";
 import { sql, not, like } from "drizzle-orm";
@@ -252,6 +253,16 @@ async function main() {
   await seedRules();
   if (args.has("--rules")) return;
   const users = await seedUsers();
+
+  if (args.has("--if-empty")) {
+    const [any] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.events);
+    if (any.n > 0) {
+      console.log("events exist: sample data skipped");
+      return;
+    }
+    await seedSample(users);
+    return;
+  }
 
   const [real] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.events).where(not(like(schema.events.sourceId, "seed:%")));
   if (real.n > 0 && !args.has("--force")) {

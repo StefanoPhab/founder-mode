@@ -58,9 +58,13 @@ pnpm db:seed --rules   # re-sync rules from rules.config.ts, keeps all data
    Consent screen **Internal** if both founders are on the same Google Workspace. In
    External + Testing mode Google expires refresh tokens after 7 days, which will break
    background Calendar/Gmail sync.
-3. Set all env vars from `.env.example` on the Vercel project, then
-   `pnpm db:migrate && pnpm db:seed` against the production DB.
-4. `vercel.json` schedules `/api/cron/sync` every 15 min (authenticated by `CRON_SECRET`).
+3. Set the env vars from `.env.example` on the Vercel project. Each build runs
+   `vercel-build`: migrations, rules, and sample data only if the DB has no events yet.
+4. `vercel.json` schedules `/api/cron/sync` once a day at 05:00 UTC (authenticated by
+   `CRON_SECRET`). The Hobby plan allows each cron job at most once a day, so the
+   15-minute freshness in the spec will come from syncing when the app is opened
+   (throttled to every 15 min) rather than from cron. Moving to Pro would allow
+   `*/15 * * * *`.
 
 ## Deviations from the spec (on purpose)
 
