@@ -70,7 +70,7 @@ pnpm db:seed --rules   # re-sync rules from rules.config.ts, keeps all data
    `DATABASE_URL_UNPOOLED`), then redeploy.
    Each build runs
    `vercel-build`: migrations, rules, and sample data only if the DB has no events yet.
-4. `vercel.json` schedules `/api/cron/sync` once a day at 05:00 UTC (authenticated by
+3. `vercel.json` schedules `/api/cron/sync` once a day at 05:00 UTC (authenticated by
    `CRON_SECRET`). The Hobby plan allows each cron job at most once a day, so the
    15-minute freshness in the spec will come from syncing when the app is opened
    (throttled to every 15 min) rather than from cron. Moving to Pro would allow
