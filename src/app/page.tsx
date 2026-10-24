@@ -1,7 +1,9 @@
 import { requireUser, devBypass } from "@/lib/session";
 import { loadGameState } from "@/lib/game/state";
 import { loadActivity, loadThread } from "@/lib/gm/thread";
+import { redirect } from "next/navigation";
 import { signOut } from "@/auth";
+import { endSession, passwordMode } from "@/lib/password-session";
 import { Shell } from "@/components/shell";
 import { Thread } from "@/components/thread";
 import { Overview } from "@/components/overview";
@@ -33,6 +35,10 @@ export default async function Home() {
     <form
       action={async () => {
         "use server";
+        if (passwordMode()) {
+          await endSession();
+          redirect("/login");
+        }
         await signOut({ redirectTo: "/login" });
       }}
     >

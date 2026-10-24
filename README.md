@@ -41,7 +41,7 @@ pnpm db:seed                  # rules + sample data; refuses if real events exis
 pnpm dev
 ```
 
-Without `AUTH_GOOGLE_ID` in dev you're signed in as the first allowed email. Without
+Without `APP_PASSWORD` or `AUTH_GOOGLE_ID` in dev you're signed in as the first allowed email. Without
 `ANTHROPIC_API_KEY` the game master says it isn't connected; everything else works.
 
 ```bash
@@ -51,14 +51,24 @@ pnpm lint
 pnpm db:seed --rules   # re-sync rules from rules.config.ts, keeps all data
 ```
 
+## Sign-in
+
+- **Now: shared password.** `APP_PASSWORD` + "who are you" (one of `ALLOWED_EMAILS`), then a
+  30-day httpOnly cookie signed with `AUTH_SECRET`. Wrong passwords are slowed down.
+- **Later: Google.** Set `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET` and the password screen turns
+  into "Continue with Google" (allowlist still applies). Redirect URI
+  `https://<domain>/api/auth/callback/google`; consent screen **Internal** if both founders are
+  on the same Workspace (in External + Testing, Google expires refresh tokens after 7 days).
+  Gmail/Calendar ingestion needs these tokens, so Phase 1 will turn this back on or add a
+  separate "connect Google" step.
+- With neither set in production, nobody gets in.
+
 ## Deploy (Vercel)
 
-1. Postgres on Neon or Supabase; put the pooled URL in `DATABASE_URL`.
-2. Google Cloud → OAuth client (Web). Redirect URI `https://<domain>/api/auth/callback/google`.
-   Consent screen **Internal** if both founders are on the same Google Workspace. In
-   External + Testing mode Google expires refresh tokens after 7 days, which will break
-   background Calendar/Gmail sync.
-3. Set the env vars from `.env.example` on the Vercel project. Each build runs
+1. Import the repo, add `ALLOWED_EMAILS`, `AUTH_SECRET`, `APP_PASSWORD`, `CRON_SECRET`, deploy.
+2. Storage → Create Database → Neon → connect to the project (sets `DATABASE_URL` and
+   `DATABASE_URL_UNPOOLED`), then redeploy.
+   Each build runs
    `vercel-build`: migrations, rules, and sample data only if the DB has no events yet.
 4. `vercel.json` schedules `/api/cron/sync` once a day at 05:00 UTC (authenticated by
    `CRON_SECRET`). The Hobby plan allows each cron job at most once a day, so the
