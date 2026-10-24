@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Visual language of next.eracolo.com. Dark only. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: oklch(0.155 0 0);
+  --color-surface: oklch(0.19 0 0);
+  --color-track: oklch(0.25 0 0);
+  --color-fg: oklch(0.92 0.02 85);
+  --color-muted: oklch(0.708 0 0);
+  --color-line: oklch(1 0 0 / 0.1);
+  --color-accent: oklch(0.62 0.16 150);
+  --color-accent-fg: oklch(0.15 0 0);
+  --color-bright: oklch(0.72 0.16 150);
+  --color-cash: oklch(0.72 0.16 150);
+  --color-pipeline: #5b9fea;
+  --color-groundwork: oklch(0.72 0.12 73);
+  --color-zero: oklch(0.62 0 0);
+  --color-boss: #eb6834;
+  --font-sans: var(--font-geist-sans), Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.live-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+/* Uppercase, letter-spaced mono label used across cards. */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+@utility card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
 }
